@@ -1,0 +1,564 @@
+\documentclass[11pt,oneside]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{booktabs,tabularx,array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\geometry{margin=2.5cm}
+\setlength{\parskip}{0.45em}
+\setlength{\parindent}{0pt}
+\setlist[enumerate]{itemsep=0.2em,topsep=0.3em}
+\setlist[itemize]{itemsep=0.15em,topsep=0.3em}
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black}
+
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\Cov}{\operatorname{Cov}}
+\newcommand{\Corr}{\operatorname{Corr}}
+\newcommand{\Pois}{\operatorname{Poisson}}
+\newcommand{\Exp}{\operatorname{Exp}}
+\newcommand{\GammaDist}{\operatorname{Gamma}}
+\newcommand{\Bin}{\operatorname{Bin}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\1}{\mathbf{1}}
+\newcommand{\mcd}{\operatorname{mcd}}
+
+\title{Apunte completo de procesos estocásticos\\[0.35em]
+\large Cadenas de Markov, procesos de Poisson y campos aleatorios de Markov}
+\author{Síntesis de estudio basada en los siete PDF del curso}
+\date{3 de octubre de 2026}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Panorama y notación}
+
+Este apunte reúne los conceptos, resultados y procedimientos de los documentos sobre cadenas de Markov, clasificación de estados, proceso de Poisson y campos aleatorios de Markov. El hilo conductor es modelar dependencia de dos maneras distintas:
+\begin{itemize}
+  \item En una cadena de Markov, el índice es el tiempo y el estado actual resume la información relevante del pasado.
+  \item En un campo aleatorio de Markov, el índice es un sitio espacial y el valor de un sitio queda condicionado localmente por sus vecinos.
+  \item En un proceso de Poisson, se cuenta cuántos eventos aparecen en intervalos de tiempo o regiones del espacio.
+\end{itemize}
+
+En una cadena discreta, $X_n$ es el estado en el paso $n$, $S$ es el espacio de estados y
+\[
+p_{ij}=\Prob(X_{n+1}=j\mid X_n=i),\qquad
+p_{ij}^{(n)}=\Prob(X_n=j\mid X_0=i).
+\]
+La matriz de transición $P=(p_{ij})$ es estocástica por filas. Se usa $P^0=I$ y $P^n=(p_{ij}^{(n)})$. Los vectores de distribución se escriben como vectores fila, de modo que una distribución inicial $\mu$ evoluciona según $\mu P^n$.
+
+En un proceso de Poisson, $N_t$ es el número de eventos hasta $t$, $T_n$ es el tiempo entre el evento $n-1$ y el evento $n$, y $W_n=T_1+\cdots+T_n$ es el instante de la $n$-ésima llegada. Estas dos últimas variables no son lo mismo: $T_n$ es un interarribo; $W_n$ es un tiempo acumulado.
+
+\section{Cadenas de Markov en tiempo discreto}
+
+\subsection{Propiedad de Markov y evolución}
+
+Una cadena homogénea satisface
+\[
+\Prob(X_{n+1}=j\mid X_n=i,X_{n-1},\ldots,X_0)
+ =\Prob(X_{n+1}=j\mid X_n=i)=p_{ij}.
+\]
+La homogeneidad significa que las probabilidades $p_{ij}$ no dependen de $n$. La ecuación de Chapman--Kolmogórov expresa que las probabilidades de transición de varios pasos se obtienen multiplicando matrices:
+\[
+p_{ij}^{(n+m)}=\sum_{k\in S}p_{ik}^{(n)}p_{kj}^{(m)},
+\qquad P^{n+m}=P^nP^m.
+\]
+
+\subsection{Accesibilidad, comunicación y clases}
+
+El estado $j$ es accesible desde $i$, escrito $i\to j$, si existe $n\geq 0$ tal que $p_{ij}^{(n)}>0$. Los estados se comunican, $i\leftrightarrow j$, si cada uno es accesible desde el otro. La comunicación es reflexiva, simétrica y transitiva; por ello divide $S$ en clases disjuntas.
+
+Una clase es \emph{cerrada} si no hay transiciones desde ella hacia estados externos. Una clase que sí tiene una flecha saliente es abierta. La cadena es \emph{irreducible} precisamente cuando todo el espacio de estados constituye una sola clase de comunicación. Un estado $i$ es absorbente cuando $p_{ii}=1$.
+
+\textbf{Cómo hallar las clases en una matriz finita.}
+\begin{enumerate}
+  \item En cada fila $i$, anotar todos los destinos $j$ con $p_{ij}>0$ y dibujar las flechas.
+  \item Buscar caminos en ambos sentidos. Los estados mutuamente alcanzables forman una clase.
+  \item Revisar si alguna flecha sale de cada clase; esto decide si es cerrada.
+  \item No confundir una flecha de ida con comunicación: para $i\leftrightarrow j$ también debe existir un camino de vuelta.
+\end{enumerate}
+
+\subsection{Primeras visitas y recurrencia}
+
+El tiempo de primera visita a $j$, partiendo de $i$, es
+\[
+\tau_{ij}=\inf\{n\geq 0:X_n=j\mid X_0=i\}.
+\]
+Para el retorno a $i$ se exige un paso positivo:
+\[
+\tau_i=\inf\{n\geq 1:X_n=i\mid X_0=i\}.
+\]
+Se define $f_{ij}(n)=\Prob(\tau_{ij}=n\mid X_0=i)$ y $f_{ij}=\sum_{n\geq 1}f_{ij}(n)$ como probabilidad de visitar alguna vez $j$ desde $i$. En particular, $f_{ii}$ es la probabilidad de regresar alguna vez a $i$.
+
+El estado $i$ es recurrente si $f_{ii}=1$ y transitorio si $f_{ii}<1$. La recurrencia y la transitoriedad son propiedades de clase: todos los estados de una misma clase tienen el mismo tipo.
+
+\subsubsection*{Criterio de recurrencia y su demostración}
+
+Partiendo de $i$, sea $N_i$ el número total de retornos a $i$ después del instante inicial. La propiedad fuerte de Markov en cada retorno da
+\[
+\Prob(N_i\geq k)=f_{ii}^{\,k},\qquad k\geq 1.
+\]
+Para una variable entera no negativa, su esperanza es la suma de las probabilidades de cola. Por tanto,
+\[
+\E(N_i)=\sum_{k\geq 1}f_{ii}^{\,k}
+ =\begin{cases}
+ \dfrac{f_{ii}}{1-f_{ii}},&f_{ii}<1,\\[0.6em]
+ +\infty,&f_{ii}=1.
+ \end{cases}
+\]
+Por otro lado, escribiendo $N_i=\sum_{n\geq 1}\1_{\{X_n=i\}}$ y usando que los sumandos son no negativos,
+\[
+\E(N_i)=\sum_{n\geq 1}\Prob(X_n=i\mid X_0=i)
+        =\sum_{n\geq 1}p_{ii}^{(n)}.
+\]
+Así se obtiene el criterio
+\[
+\boxed{\ i\text{ recurrente}\iff\sum_{n\geq 1}p_{ii}^{(n)}=\infty,
+\qquad i\text{ transitorio}\iff\sum_{n\geq 1}p_{ii}^{(n)}<\infty.\ }
+\]
+La serie mide el número esperado de retornos. Si $f_{ii}=1$, habrá infinitos retornos casi seguramente; si $f_{ii}<1$, el número esperado de retornos es finito.
+
+Toda clase cerrada y finita es recurrente positiva. En consecuencia, toda cadena finita e irreducible es recurrente positiva. Un estado recurrente puede ser recurrente nulo si el retorno ocurre casi seguramente pero su esperanza es infinita; la caminata simétrica en $\mathbb Z$ es el ejemplo clásico.
+
+\subsection{Periodo}
+
+El periodo de un estado es el máximo común divisor de los pasos positivos en los que puede volver:
+\[
+d(i)=\mcd\{n\geq 1:p_{ii}^{(n)}>0\}.
+\]
+Si no hay retorno posible, se adopta $d(i)=0$. El estado es aperiódico si $d(i)=1$. Estados comunicantes tienen el mismo periodo, así que el periodo es una propiedad de clase.
+
+Reglas prácticas:
+\begin{itemize}
+  \item Si $p_{ii}>0$, existe un retorno en un paso y $d(i)=1$.
+  \item Si todos los ciclos de retorno tienen longitud par y al menos un retorno de longitud $2$ es posible, el periodo es $2$.
+  \item Para decidir el periodo, se necesita el máximo común divisor de las longitudes posibles, no solamente la longitud de un ciclo observado.
+\end{itemize}
+
+Por ejemplo, una cadena que alterna entre conjuntos de estados de paridad opuesta sólo puede regresar a un estado en tiempos pares: su periodo es $2$. Si además puede regresar en dos pasos y en tres, el máximo común divisor es $1$ y la clase es aperiódica.
+
+\subsection{Distribuciones invariantes y tiempos medios de recurrencia}
+
+Una distribución $\pi=(\pi_j)$ es invariante si
+\[
+\pi_j\geq 0,\qquad \sum_j\pi_j=1,\qquad \pi P=\pi.
+\]
+La ecuación en la coordenada $j$ es $\pi_j=\sum_i\pi_i p_{ij}$; usa la columna $j$ de $P$. Es frecuente equivocarse usando las filas en este cálculo.
+
+El tiempo medio de recurrencia de un estado recurrente es
+\[
+\mu_i=\E(\tau_i\mid X_0=i).
+\]
+Se llama recurrente positivo si $\mu_i<\infty$ y recurrente nulo si $\mu_i=\infty$. Para una cadena irreducible y recurrente positiva existe una única distribución invariante y
+\[
+\boxed{\pi_i=\frac{1}{\mu_i},\qquad \mu_i=\frac{1}{\pi_i}.}
+\]
+La interpretación de $\pi_i$ es la fracción de tiempo de largo plazo que se pasa en $i$, cuando se consideran promedios temporales. Esta interpretación no garantiza por sí sola que $p_{ij}^{(n)}$ converja.
+
+En una cadena reducible pueden existir varias clases cerradas y, por ello, múltiples distribuciones invariantes. Cada clase recurrente cerrada aporta su distribución estacionaria; las combinaciones convexas de ellas también son invariantes. Los estados transitorios tienen masa cero bajo cualquier distribución invariante de una cadena finita.
+
+\textbf{Resolución segura de $\pi P=\pi$.}
+\begin{enumerate}
+  \item Escribir las ecuaciones coordenada por coordenada, usando las columnas de $P$.
+  \item Añadir la condición $\sum_i\pi_i=1$.
+  \item Resolver y sustituir en una ecuación que no se haya usado para despejar.
+  \item Si hay varias clases recurrentes, resolver dentro de cada clase cerrada y formar después las mezclas convexas.
+\end{enumerate}
+
+\subsection{Teorema de convergencia y diferencia con invariancia}
+
+Si una cadena es irreducible, recurrente positiva y aperiódica, entonces para todo estado inicial $i$ y destino $j$,
+\[
+\lim_{n\to\infty}p_{ij}^{(n)}=\pi_j,
+\]
+donde $\pi$ es la única distribución invariante. En cadenas finitas, irreducibilidad ya implica recurrencia positiva; por tanto, basta comprobar además la aperiodicidad.
+
+Las tres hipótesis tienen papeles distintos:
+\begin{itemize}
+  \item Sin irreducibilidad puede haber varias clases cerradas y límites que dependen del estado inicial.
+  \item Sin aperiodicidad puede haber oscilación aunque exista una única distribución invariante.
+  \item El teorema es suficiente, no necesario: una cadena reducible también puede converger, por ejemplo si todos los estados acaban absorbidos en un único estado.
+\end{itemize}
+
+Ejemplo extremo: $P=\begin{pmatrix}0&1\\1&0\end{pmatrix}$. La distribución $(1/2,1/2)$ es invariante, pero la cadena alterna determinísticamente y $p_{00}^{(n)}$ toma sucesivamente los valores $1,0,1,0,\ldots$. No existe límite.
+
+\subsection{Plantilla de clasificación completa}
+
+Ante una matriz finita, conviene entregar la respuesta en este orden:
+\begin{enumerate}
+  \item Diagrama de transición y lista de destinos positivos por fila.
+  \item Clases de comunicación; marcar cada una como cerrada o abierta e indicar irreducibilidad.
+  \item Recurrente/transitorio. En una cadena finita, las clases cerradas son recurrentes positivas; las abiertas contienen estados transitorios.
+  \item Periodo de cada clase, calculando el máximo común divisor de los tiempos de retorno.
+  \item Distribuciones invariantes y tiempos medios de recurrencia de los estados recurrentes.
+  \item Verificación separada de las tres hipótesis del teorema de convergencia y conclusión sobre los límites.
+\end{enumerate}
+
+\subsection{Cadena de dos estados: fórmula explícita para \texorpdfstring{$P^n$}{P a la n}}
+
+Considérese $S=\{0,1\}$ y
+\[
+P=\begin{pmatrix}1-a&a\\ b&1-b\end{pmatrix},\qquad a,b>0.
+\]
+El parámetro $a$ es la probabilidad de pasar de $0$ a $1$ y $b$ la de pasar de $1$ a $0$. Sea $\lambda=1-a-b$. Definimos
+\[
+\Pi=\frac{1}{a+b}\begin{pmatrix}b&a\\b&a\end{pmatrix},\qquad
+R=\frac{1}{a+b}\begin{pmatrix}a&-a\\-b&b\end{pmatrix}.
+\]
+Entonces $\Pi+R=I$, $\Pi P=\Pi$ y $RP=\lambda R$. La última igualdad puede verificarse multiplicando las matrices. Por inducción sobre $n$,
+\[
+\boxed{P^n=\Pi+\lambda^n R.}
+\]
+La base $n=0$ es $P^0=I=\Pi+R$. Si la identidad vale para $n$, entonces
+\[
+P^{n+1}=P^nP=\Pi P+\lambda^nRP=\Pi+\lambda^{n+1}R.
+\]
+Como $\pi=(b/(a+b),a/(a+b))$,
+\[
+P^n=\begin{pmatrix}
+\dfrac{b}{a+b}+\dfrac{a}{a+b}\lambda^n &
+\dfrac{a}{a+b}-\dfrac{a}{a+b}\lambda^n\\[0.8em]
+\dfrac{b}{a+b}-\dfrac{b}{a+b}\lambda^n &
+\dfrac{a}{a+b}+\dfrac{b}{a+b}\lambda^n
+\end{pmatrix}.
+\]
+Si $a,b\in(0,1)$, entonces $-1<1-a-b<1$, de modo que $\lambda^n\to0$ y ambas filas convergen a $\pi$. Los tiempos medios son $\mu_0=(a+b)/b$ y $\mu_1=(a+b)/a$.
+
+\textbf{Ejemplo.} Si $a=0.3$ y $b=0.2$, entonces $\lambda=0.5$, $\pi=(0.4,0.6)$, $\mu_0=2.5$ y $\mu_1=5/3$. Además,
+\[
+P^3=\begin{pmatrix}0.475&0.525\\0.350&0.650\end{pmatrix}.
+\]
+Si $a=b=1$, en cambio, $\lambda=-1$: la cadena alterna entre los estados, el periodo es $2$ y no hay límite, aunque $(1/2,1/2)$ siga siendo invariante. En los casos de borde con estados absorbentes o transitorios hay que reclasificar la cadena; no se deben aplicar fórmulas de recurrencia que requieren que los estados sean recurrentes.
+
+\section{Proceso de Poisson temporal}
+
+\subsection{Definiciones constructiva y por incrementos}
+
+Un proceso de conteo registra eventos sucesivos. Para un proceso de Poisson homogéneo de tasa $\lambda>0$, los interarribos $T_1,T_2,\ldots$ son independientes e idénticamente distribuidos como $\Exp(\lambda)$, cuya densidad y cola son
+\[
+f_T(t)=\lambda e^{-\lambda t},\quad \Prob(T>t)=e^{-\lambda t},\quad
+\E(T)=\frac1\lambda,\quad \Var(T)=\frac1{\lambda^2},\qquad t\geq0.
+\]
+Con $W_n=T_1+\cdots+T_n$, el conteo es
+\[
+N_t=\max\{n\geq0:W_n\leq t\},\qquad W_0=0.
+\]
+Equivalentemente, $N_0=0$, los incrementos son independientes y
+\[
+N_{s+t}-N_s\sim\Pois(\lambda t),\qquad s\geq0,\quad t>0.
+\]
+Las trayectorias son no decrecientes, constantes entre eventos, continuas por la derecha y sus saltos tienen tamaño uno. El parámetro $\lambda$ es la tasa media de eventos por unidad de tiempo.
+
+\subsection{Distribución del conteo y momentos}
+
+Para cada $t\geq0$,
+\[
+\boxed{\Prob(N_t=k)=e^{-\lambda t}\frac{(\lambda t)^k}{k!},\qquad k=0,1,2,\ldots}
+\]
+Por ello
+\[
+N_t\sim\Pois(\lambda t),\qquad \E(N_t)=\Var(N_t)=\lambda t.
+\]
+En un intervalo $(s,s+t]$ se reemplaza $t$ por la longitud del intervalo. Para una cola, por ejemplo,
+\[
+\Prob(N_t\geq r)=1-\sum_{k=0}^{r-1}e^{-\lambda t}\frac{(\lambda t)^k}{k!}.
+\]
+
+\subsection{Tiempos de llegada: distribución gamma}
+
+$W_n$ es suma de $n$ exponenciales independientes de tasa $\lambda$; por tanto tiene distribución Erlang, un caso de la gamma:
+\[
+W_n\sim\GammaDist(n,\lambda),\qquad
+f_{W_n}(w)=\frac{\lambda^n w^{n-1}e^{-\lambda w}}{(n-1)!},\quad w>0.
+\]
+Sus momentos son
+\[
+\E(W_n)=\frac{n}{\lambda},\qquad \Var(W_n)=\frac{n}{\lambda^2}.
+\]
+El puente más útil entre conteos y esperas es
+\[
+\boxed{\{W_n\leq t\}=\{N_t\geq n\}.}
+\]
+También,
+\[
+\Prob(W_n\leq t)=1-e^{-\lambda t}\sum_{k=0}^{n-1}\frac{(\lambda t)^k}{k!}.
+\]
+Un tramo $W_m-W_n=T_{n+1}+\cdots+T_m$ es gamma$(m-n,\lambda)$ si $m>n$.
+
+\subsection{Pérdida de memoria}
+
+La exponencial satisface
+\[
+\Prob(T>s+t\mid T>s)=\frac{e^{-\lambda(s+t)}}{e^{-\lambda s}}=e^{-\lambda t}=\Prob(T>t).
+\]
+Por tanto, si ya transcurrió un tiempo $s$ sin eventos, la espera residual conserva la ley $\Exp(\lambda)$ y su media sigue siendo $1/\lambda$. La edad de la espera no la hace más cercana ni más lejana.
+
+\subsection{Independencia de incrementos y condicionamiento}
+
+Para $0<s<t$, los conteos $N_s$ y $N_t-N_s$ son independientes, con leyes $\Pois(\lambda s)$ y $\Pois(\lambda(t-s))$. En consecuencia,
+\[
+\Cov(N_s,N_t)=\Cov(N_s,N_s+N_t-N_s)=\Var(N_s)=\lambda s,
+\]
+y
+\[
+\Corr(N_s,N_t)=\frac{\lambda s}{\sqrt{(\lambda s)(\lambda t)}}=\sqrt{\frac{s}{t}}.
+\]
+
+Condicionado al total hasta $t$, el reparto temporal es binomial:
+\[
+\boxed{N_s\mid(N_t=n)\sim\Bin\left(n,\frac{s}{t}\right).}
+\]
+Por tanto,
+\[
+\E(N_s\mid N_t)=\frac{s}{t}N_t,
+\qquad \Prob(W_1\leq s\mid N_t=1)=\frac{s}{t}.
+\]
+Más generalmente, dados $N_t=n$, los $n$ instantes de llegada tienen la distribución de $n$ variables uniformes independientes en $(0,t)$ ordenadas de menor a mayor. La tasa $\lambda$ desaparece de esta distribución condicional.
+
+\subsection{Superposición y asignación de tipos}
+
+Si $N_t$ y $M_t$ son procesos independientes de tasas $\lambda_1$ y $\lambda_2$, entonces $N_t+M_t$ es Poisson de tasa $\lambda_1+\lambda_2$. En particular,
+\[
+\Prob(N_t+M_t=k)=e^{-(\lambda_1+\lambda_2)t}
+\frac{((\lambda_1+\lambda_2)t)^k}{k!}.
+\]
+Condicionado a un total de $k$ eventos,
+\[
+N_t\mid(N_t+M_t=k)\sim
+\Bin\left(k,\frac{\lambda_1}{\lambda_1+\lambda_2}\right).
+\]
+La probabilidad de que el próximo evento provenga de la fuente 1 también es $\lambda_1/(\lambda_1+\lambda_2)$. La espera hasta el primer evento de cualquiera de las dos fuentes es exponencial de tasa suma.
+
+\subsection{Poisson no homogéneo}
+
+La tasa puede depender del tiempo. Si la intensidad es $\lambda(u)\geq0$, se define la intensidad acumulada
+\[
+m(t)=\int_0^t\lambda(u)\,du.
+\]
+El proceso conserva incrementos independientes y
+\[
+N_t-N_s\sim\Pois\bigl(m(t)-m(s)\bigr),\qquad
+\E(N_t-N_s)=\Var(N_t-N_s)=m(t)-m(s).
+\]
+En particular, $N_t\sim\Pois(m(t))$ y la supervivencia de la primera llegada es
+\[
+\Prob(W_1>t)=\Prob(N_t=0)=e^{-m(t)}.
+\]
+La pérdida de memoria, en general, desaparece:
+\[
+\Prob(W_1>s+u\mid W_1>s)
+ =\exp\bigl(-(m(s+u)-m(s))\bigr),
+\]
+que no tiene por qué coincidir con $e^{-m(u)}$.
+
+\textbf{Ejemplo.} Para $\lambda(t)=2t$, se tiene $m(t)=t^2$. Entonces
+\[
+N_2\sim\Pois(4),\qquad
+N_3-N_1\sim\Pois(9-1)=\Pois(8),\qquad
+\Prob(W_1>t)=e^{-t^2}.
+\]
+La mediana de $W_1$ resuelve $e^{-t^2}=1/2$, así que es $\sqrt{\log 2}$. Condicionado a no haber llegado a la hora $1$, la probabilidad de que la primera llegada espere más de $0.5$ horas adicionales es $e^{-(2.25-1)}=e^{-1.25}$, no $e^{-0.25}$.
+
+\subsection{Proceso de Poisson compuesto}
+
+Sean $Y_1,Y_2,\ldots$ i.i.d., independientes del proceso de conteo, y sea
+\[
+X_t=\sum_{i=1}^{N_t}Y_i,
+\]
+con suma cero cuando $N_t=0$. Si $Y$ tiene segundo momento finito y $N_t\sim\Pois(\lambda t)$,
+\[
+\boxed{\E(X_t)=\lambda t\E(Y),\qquad
+\Var(X_t)=\lambda t\E(Y^2).}
+\]
+Para entender la varianza, se aplica la ley de varianza total:
+\begin{align*}
+\Var(X_t)
+&=\E[\Var(X_t\mid N_t)]+\Var[\E(X_t\mid N_t)]\\
+&=\E(N_t)\Var(Y)+\Var(N_t)(\E Y)^2\\
+&=\lambda t\bigl(\Var(Y)+(\E Y)^2\bigr)
+ =\lambda t\E(Y^2).
+\end{align*}
+No se debe sustituir $\Var(Y)$ por $\E(Y^2)$ en la fórmula: ambas fuentes de variabilidad, el tamaño de cada monto y el número aleatorio de eventos, importan.
+
+\textbf{Ejemplo.} Si hay $5$ siniestros esperados por mes, cada uno con media $1000$ y desviación estándar $600$, entonces $\E(Y^2)=600^2+1000^2=1\,360\,000$. En seis meses, $\E(X)=30\,000$ y $\Var(X)=40\,800\,000$ dólares cuadrados.
+
+\subsection{Receta para ejercicios numéricos de Poisson}
+
+\begin{enumerate}
+  \item Fijar una unidad de tiempo común para $\lambda$ y $t$.
+  \item Calcular el parámetro del conteo: $\theta=\lambda t$, o $\theta=m(t)-m(s)$ si la tasa varía.
+  \item Traducir el evento: «al menos $r$» es complemento de «a lo más $r-1$»; $W_n\leq t$ equivale a $N_t\geq n$.
+  \item Elegir conteo Poisson, espera exponencial/gamma, incremento independiente o suma compuesta.
+  \item Mantener forma exacta y unidades; verificar que las probabilidades están en $[0,1]$ y las varianzas son no negativas.
+\end{enumerate}
+
+\textbf{Ejemplo breve.} Con $\lambda=6$ llamadas por hora,
+\[
+\Prob(N_1=4)=e^{-6}\frac{6^4}{4!},\qquad
+\Prob(N_{1/2}\geq2)=1-e^{-3}(1+3),
+\]
+\[
+\Prob(W_1>20\text{ min})=e^{-6/3}=e^{-2}.
+\]
+Además $W_5\sim\GammaDist(5,6)$, con media $5/6$ horas y varianza $5/36$ horas cuadradas.
+
+\section{Procesos de Poisson en el espacio}
+
+Ahora los eventos son puntos de una región $A\subseteq\R^2$ y $N(B)$ cuenta los puntos que caen en $B\subseteq A$. Un proceso de Poisson espacial homogéneo de intensidad $\lambda$ cumple
+\[
+N(B)\sim\Pois(\lambda|B|),
+\]
+y los conteos de regiones disjuntas son independientes. La intensidad es el número medio de puntos por unidad de área.
+
+Condicionado a que $N(A)=n$, las ubicaciones de los $n$ puntos son independientes y uniformes en $A$. Si la intensidad depende de la ubicación, se usa $\lambda(x)$ y el parámetro de $N(B)$ es $\int_B\lambda(x)\,dx$.
+
+\textbf{Distancia al punto más cercano.} Sea $R$ la distancia desde el origen al punto más próximo en un proceso homogéneo en el plano. Para $x\geq0$,
+\[
+\Prob(R^2>x)=\Prob(N(B(0,\sqrt{x}))=0)
+ =e^{-\lambda\pi x}.
+\]
+Luego $R^2\sim\Exp(\lambda\pi)$. Esta identidad se debe a que el área del disco de radio $\sqrt{x}$ es $\pi x$.
+
+La homogeneidad espacial es una hipótesis fuerte: significa densidad media constante y ausencia de atracción o repulsión entre puntos, una vez fijada el área. Si el entorno, la elevación o la densidad de población cambia, suele ser más razonable un modelo no homogéneo.
+
+\section{Campos aleatorios de Markov e Ising}
+
+\subsection{Campo espacial y propiedad local}
+
+Sea $S$ un conjunto finito de sitios y $X_s$ una variable aleatoria en cada sitio. La colección $X=\{X_s:s\in S\}$ es un campo aleatorio; una realización $x=(x_s)$ es una configuración. A cada $s$ se le asigna un conjunto de vecinos $N(s)$, normalmente simétrico: $t\in N(s)$ si y sólo si $s\in N(t)$.
+
+El campo tiene la propiedad de Markov espacial cuando, para cada sitio $s$,
+\[
+\Prob(X_s=x_s\mid X_t=x_t,\ t\ne s)
+ =\Prob(X_s=x_s\mid X_t=x_t,\ t\in N(s)).
+\]
+Conocer los vecinos hace irrelevante, para predecir el sitio, el resto del campo. La vecindad forma parte de la definición del modelo: en una imagen se pueden usar cuatro vecinos ortogonales o agregar las cuatro diagonales.
+
+\subsection{Modelo de Ising}
+
+En el modelo de Ising, $X_s\in\{-1,+1\}$ y sitios vecinos tienden a tomar el mismo valor. Con parámetro $\beta\geq0$, la probabilidad condicional local es
+\[
+\boxed{\Prob(X_s=+1\mid X_t,t\in N(s))
+ =\frac{1}{1+\exp\left(-2\beta\sum_{t\in N(s)}X_t\right)}.}
+\]
+Es una regresión logística cuyo predictor es la suma de los valores vecinos.
+\begin{itemize}
+  \item Si $\beta=0$, el sitio vale $+1$ con probabilidad $1/2$, sin influencia vecinal.
+  \item Si la suma vecinal es positiva, la mayoría favorece $+1$; si es negativa, favorece $-1$.
+  \item Si los vecinos se equilibran, la probabilidad es $1/2$.
+  \item Al crecer $\beta$, aumenta la tendencia a imitar a los vecinos.
+\end{itemize}
+Para cuatro vecinos y $\beta=0.8$, las probabilidades aproximadas de que el sitio sea $+1$ son:
+\[
+\begin{array}{c|ccccc}
+\text{suma vecinal} & 4 & 2 & 0 & -2 & -4\\
+\hline
+\Prob(X_s=+1\mid\text{vecinos}) & 0.998 & 0.961 & 0.500 & 0.039 & 0.002
+\end{array}
+\]
+
+En un grafo finito sin campo externo, la distribución conjunta asociada tiene la forma de Gibbs
+\[
+\Prob(X=x)=\frac{1}{Z(\beta)}
+\exp\left(\beta\sum_{\{s,t\}\in E}x_sx_t\right),
+\]
+donde cada arista no dirigida se cuenta una vez y $Z(\beta)$ normaliza las probabilidades. Las configuraciones homogéneas se favorecen cuando $\beta>0$. La constante $Z$ involucra una suma sobre todas las configuraciones, que crece exponencialmente con el número de sitios.
+
+\subsection{Denoising como inferencia bayesiana}
+
+En una imagen binaria, $x_s\in\{-1,+1\}$ representa papel/tinta o dos clases verdaderas y $y_s$ es el dato observado. Si
+\[
+Y_s\mid X_s=x_s\sim\mathcal{N}(x_s,\sigma^2)
+\]
+independientemente entre sitios, el prior de Ising favorece regiones localmente coherentes y la verosimilitud modela el ruido del escáner. Por Bayes,
+\[
+\Prob(x\mid y)\propto \Prob(y\mid x)\Prob(x).
+\]
+La condicional posterior de un sitio es
+\[
+\boxed{\Prob(X_s=+1\mid\text{vecinos},y_s)
+ =\frac{1}{1+\exp\left[-2\left(\beta\sum_{t\in N(s)}X_t+
+ \dfrac{y_s}{\sigma^2}\right)\right]}.}
+\]
+El primer término del predictor es la evidencia del vecindario; el segundo, la evidencia local del escaneo. La decisión MAP local favorece $+1$ cuando
+\[
+y_s>-\beta\sigma^2\sum_{t\in N(s)}X_t.
+\]
+Así, un dato observado ligeramente positivo no basta necesariamente para etiquetar tinta si todos los vecinos apoyan papel. En el ejemplo del material, la decisión independiente pixel a pixel tenía $20.2\%$ de error, frente a $4.0\%$ al incorporar los vecinos; es una mejora de ese ejemplo, no una garantía universal.
+
+Las mismas ideas se aplican a clasificación de imágenes satelitales o médicas, mapas de enfermedad y ecología espacial: la dependencia local permite estabilizar sitios ruidosos o con poca información.
+
+\section{Conexiones, comprobaciones y errores frecuentes}
+
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.28\textwidth}X}
+\toprule
+\textbf{Confusión} & \textbf{Distinción correcta}\\
+\midrule
+Invariante frente a límite & $\pi P=\pi$ dice que partir de $\pi$ conserva la ley. Que $P^n$ converja desde cada estado requiere además las hipótesis de irreducibilidad, recurrencia positiva y aperiodicidad.\\
+Filas frente a columnas & $P$ actúa sobre distribuciones fila por la derecha. La coordenada $j$ de $\pi P$ usa la columna $j$ de $P$.\\
+Clase cerrada frente a irreducible & Puede haber varias clases cerradas en una cadena reducible. La irreducibilidad exige una sola clase para todo el espacio.\\
+Periodo frente a ciclo visible & Se calcula el máximo común divisor de todas las longitudes de retorno posibles. Un lazo garantiza periodo $1$.\\
+$T_n$ frente a $W_n$ & $T_n$ es el interarribo $n$; $W_n=\sum_{k=1}^nT_k$ es el instante de la llegada $n$.\\
+Poisson frente a gamma & $N_t$ cuenta eventos y es Poisson; $W_n$ mide el instante de la llegada $n$ y es gamma/Erlang.\\
+Tasa frente a probabilidad & $\lambda$ tiene unidades de eventos/tiempo. Siempre convertir $t$ a la unidad de $\lambda$ antes de usar $\lambda t$.\\
+Varianza compuesta & $\Var(X_t)=\lambda t\E(Y^2)$, no $\lambda t\Var(Y)$. La aleatoriedad del conteo también aporta variabilidad.\\
+Poisson homogéneo frente a no homogéneo & En el segundo, la media de un incremento depende del intervalo mediante $m(t)-m(s)$, no sólo de su longitud. En general no hay falta de memoria.\\
+\bottomrule
+\end{tabularx}
+
+\textbf{Chequeos rápidos antes de entregar una solución.}
+\begin{itemize}
+  \item Cada fila de una matriz de transición suma uno y todas sus entradas son no negativas.
+  \item Una distribución suma uno, es no negativa y satisface $\pi P=\pi$.
+  \item Un límite propuesto debe ser compatible con la periodicidad y con las clases cerradas accesibles.
+  \item En Poisson, $\theta$ debe ser adimensional; una cola «al menos» debe incluir todos los valores desde el umbral.
+  \item En una suma compuesta, las unidades de $\E(X_t)$ y $\Var(X_t)$ son las del monto y su cuadrado.
+  \item Para un proceso espacial homogéneo, el parámetro de una región es intensidad por área.
+\end{itemize}
+
+\section{Formulario de consulta}
+
+\begin{align*}
+\text{Transición de $n$ pasos:}\quad &P^{n+m}=P^nP^m,\\
+\text{Recurrencia:}\quad &i\text{ recurrente}\iff \sum_{n\geq1}p_{ii}^{(n)}=\infty,\\
+\text{Periodo:}\quad &d(i)=\mcd\{n\geq1:p_{ii}^{(n)}>0\},\\
+\text{Invariante:}\quad &\pi P=\pi,\qquad \pi_i=1/\mu_i\quad\text{(irreducible positiva)},\\
+\text{Convergencia:}\quad &\text{irreducible + positiva recurrente + aperiódica},\\[0.2em]
+\text{Exponencial:}\quad &\Prob(T>t)=e^{-\lambda t},\quad \E T=1/\lambda,\quad \Var T=1/\lambda^2,\\
+\text{Poisson:}\quad &N_t\sim\Pois(\lambda t),\quad \Prob(N_t=k)=e^{-\lambda t}(\lambda t)^k/k!,\\
+\text{Gamma:}\quad &W_n\sim\GammaDist(n,\lambda),\quad \E W_n=n/\lambda,\quad \Var W_n=n/\lambda^2,\\
+\text{Puente conteo-espera:}\quad &\{W_n\leq t\}=\{N_t\geq n\},\\
+\text{Condicional temporal:}\quad &N_s\mid N_t=n\sim\Bin(n,s/t),\\
+\text{Superposición:}\quad &\lambda_{\mathrm{total}}=\sum_r\lambda_r,\\
+\text{No homogéneo:}\quad &m(t)=\int_0^t\lambda(u)\,du,\quad N_t-N_s\sim\Pois(m(t)-m(s)),\\
+\text{Poisson compuesto:}\quad &\E X_t=\lambda t\E Y,\quad \Var X_t=\lambda t\E(Y^2),\\
+\text{Poisson espacial:}\quad &N(B)\sim\Pois(\lambda|B|),\quad R^2\sim\Exp(\lambda\pi),\\
+\text{Ising local:}\quad &\Prob(X_s=+1\mid\text{vecinos})=
+ \{1+e^{-2\beta\sum_{t\in N(s)}X_t}\}^{-1}.
+\end{align*}
+
+\section{Fuentes integradas}
+
+El contenido se sintetizó a partir de los documentos proporcionados en el espacio de trabajo:
+\begin{enumerate}
+  \item \textit{Guia\_I2\_PasoAPaso\_Cadenas\_y\_Poisson\_261003\_165712.pdf}.
+  \item \textit{Ejercicios\_repaso3.pdf}.
+  \item \textit{formulario\_control2.pdf}.
+  \item \textit{clasificacion de estados en cadenas de Markov.pdf}.
+  \item \textit{complemento\_demostraciones.pdf}.
+  \item \textit{proceso\_poisson-2.pdf}.
+  \item \textit{Campos aleatorios de Markov.pdf}.
+\end{enumerate}
+Las fórmulas y explicaciones están reorganizadas y redactadas como material de estudio; los ejemplos numéricos se usan para ilustrar los procedimientos y no sustituyen las hipótesis de cada teorema.
+
+\end{document}
